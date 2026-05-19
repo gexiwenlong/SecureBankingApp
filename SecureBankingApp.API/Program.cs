@@ -3,9 +3,17 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SecureBankingApp.API.Services;
 using System.Text;
-
+using AspNetCoreRateLimit;
 var builder = WebApplication.CreateBuilder(args);
-
+// =============================================
+// 配置速率限制
+// =============================================
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 // =============================================
 // 从环境变量读取 JWT Secret（安全方式）
 // =============================================
@@ -74,7 +82,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseIpRateLimiting();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
